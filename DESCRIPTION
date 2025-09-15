@@ -1,0 +1,30 @@
+Package: cellGeometry
+Title: Geometric Single Cell Deconvolution
+Version: 0.5.4
+Authors@R: 
+    c(person(given = "Myles", family = "Lewis",
+    role = c("aut", "cre"),
+    email = "myles.lewis@qmul.ac.uk",
+    comment = c(ORCID = "0000-0001-9365-5345")),
+    person(given = "Rachel", family = "Lau",
+    role = c("ctb"),
+    comment = c(ORCID = "0000-0002-8330-8048")))
+Description: Deconvolution of bulk RNA-Sequencing data into proportions of cells based on a reference single-cell RNA-Sequencing dataset using high-dimensional geometric methodology. 
+License: GPL (>= 3)
+Encoding: UTF-8
+biocViews:
+Imports: circlize, ComplexHeatmap, DelayedArray, dplyr, ensembldb,
+        ggplot2, ggrepel, grid, gtools, matrixStats, mcprogress,
+        parallel, pbmcapply, rlang, scales
+RoxygenNote: 7.3.3
+Depends: R (>= 4.1.0)
+Suggests: future.apply, ggsci, knitr, plotly, Rfast2, rmarkdown,
+        seriation
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2025-09-10 12:31:17 UTC; myles
+Author: Myles Lewis [aut, cre] (ORCID: <https://orcid.org/0000-0001-9365-5345>),
+  Rachel Lau [ctb] (ORCID: <https://orcid.org/0000-0002-8330-8048>)
+Maintainer: Myles Lewis <myles.lewis@qmul.ac.uk>
+Repository: CRAN
+Date/Publication: 2025-09-15 08:20:02 UTC
