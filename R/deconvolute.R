@@ -5,11 +5,11 @@
 #' compensation for spillover.
 #'
 #' @param mk object of class 'cellMarkers'. See [cellMarkers()].
-#' @param test matrix of bulk RNA-Seq to be deconvoluted. We recommend raw
-#'   counts as input, but normalised data can be provided, in which case set
-#'   `log = FALSE`.
-#' @param log Logical, whether to apply log2 +1 to count data in `test`. Set to
-#'   `FALSE` if prenormalised bulk RNA-Seq data is provided.
+#' @param test matrix of bulk RNA-Seq to be deconvoluted with genes in rows and
+#'   samples in columns. We recommend raw counts as input, but normalised data
+#'   can be provided, in which case set `logged_bulk = TRUE`.
+#' @param logged_bulk Logical, whether log2 transformed bulk RNA-Seq data is
+#'   used as input in `test`.
 #' @param count_space Logical, whether deconvolution is performed in count
 #'   space (as opposed to log2 space). Signature and test revert to count scale
 #'   by 2^ exponentiation during deconvolution.
@@ -49,6 +49,11 @@
 #' Equal weighting of genes by setting `weight_method = "equal"` can help
 #' devolution of subclusters whose signature genes have low expression. It is
 #' enabled by default.
+#' 
+#' If a normalised (i.e. logged) bulk matrix is provided instead of raw counts,
+#' then it is important that zero expression is true zero. For this reason we do
+#' not recommend use of VST (variance stabilised transformed counts) which has a
+#' variable offset.
 #' 
 #' Multipass deconvolution can be activated by setting `npass` to 2 or higher.
 #' This is designed to remove genes which behave inconsistently due to noise in
@@ -118,7 +123,8 @@
 #' @importFrom stats optimise
 #' @export
 #'
-deconvolute <- function(mk, test, log = TRUE,
+deconvolute <- function(mk, test,
+                        logged_bulk = FALSE,
                         count_space = TRUE,
                         comp_amount = 1,
                         group_comp_amount = 0,
@@ -140,12 +146,14 @@ deconvolute <- function(mk, test, log = TRUE,
   weight_method <- match.arg(weight_method, c("none", "equal"))
   outlier_method <- match.arg(outlier_method)
   test <- as.matrix(test)
+  if (any(test < 0)) stop("`test` contains negative values")
   
   if (isTRUE(convert_bulk)) convert_bulk <- "ref"
   if (isFALSE(convert_bulk)) convert_bulk <- "none"
   if (convert_bulk == "qqmap") {
     if (verbose) message("Quantile map bulk to sc, ", appendLF = FALSE)
-    qqmap <- quantile_map(log2(test +1), mk$genemeans, remove_zeros = TRUE)
+    logtest0 <- if (logged_bulk) test else log2(test +1)
+    qqmap <- quantile_map(logtest0, mk$genemeans, remove_zeros = TRUE)
   }
   bulk2scfun <- switch(convert_bulk, "ref" = bulk2sc, "qqmap" = qqmap$map)
   
@@ -154,9 +162,9 @@ deconvolute <- function(mk, test, log = TRUE,
     cellmat <- if (use_filter) {mk$groupmeans_filtered[mk$group_geneset, ]
     } else mk$groupmeans[mk$group_geneset, ]
     if (!all(mk$group_geneset %in% rownames(test)))
-      stop("test is missing some group signature genes")
+      stop("`test` is missing some group signature genes")
     logtest <- test[mk$group_geneset, , drop = FALSE]
-    if (log) logtest <- log2(logtest +1)
+    if (!logged_bulk) logtest <- log2(logtest +1)
     if (convert_bulk != "none") logtest <- bulk2scfun(logtest)
     gtest <- deconv_adjust(logtest, cellmat, group_comp_amount, weights = NULL,
                            adjust_comp, count_space, weight_method,
@@ -176,9 +184,9 @@ deconvolute <- function(mk, test, log = TRUE,
   }
   # cellmat <- sc2bulk(cellmat)
   if (!all(mk$geneset %in% rownames(test)))
-    stop("test is missing some signature genes")
+    stop("`test` is missing some signature genes")
   logtest2 <- test[mk$geneset, , drop = FALSE]
-  if (log) logtest2 <- log2(logtest2 +1)
+  if (!logged_bulk) logtest2 <- log2(logtest2 +1)
   if (convert_bulk != "none") logtest2 <- bulk2scfun(logtest2)
   atest <- deconv_multipass(logtest2, cellmat, comp_amount, weights,
                             weight_method, adjust_comp, count_space, npass,
@@ -329,8 +337,11 @@ deconv_adjust <- function(test, cellmat, comp_amount, weights,
       comp_amount[w] <- unlist(newcomps)
       atest <- deconv(test, cellmat, comp_amount, m_itself)
       # fix floating point errors
-      atest$output[atest$output < 0] <- 0
-      atest$percent[atest$percent < 0] <- 0
+      if (any(z <- atest$output < 0)) {
+        attr(atest$output, "min") <- min(atest$output)
+        atest$output[z] <- 0
+        atest$percent <- atest$output / rowSums(atest$output) * 100
+      }
     } else if (verbose) message("negative cell proportion projection detected")
   }
   if (resid) {

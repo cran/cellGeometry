@@ -7,7 +7,7 @@
 deconvolute(
   mk,
   test,
-  log = TRUE,
+  logged_bulk = FALSE,
   count_space = TRUE,
   comp_amount = 1,
   group_comp_amount = 0,
@@ -29,12 +29,12 @@ deconvolute(
 \arguments{
 \item{mk}{object of class 'cellMarkers'. See \code{\link[=cellMarkers]{cellMarkers()}}.}
 
-\item{test}{matrix of bulk RNA-Seq to be deconvoluted. We recommend raw
-counts as input, but normalised data can be provided, in which case set
-\code{log = FALSE}.}
+\item{test}{matrix of bulk RNA-Seq to be deconvoluted with genes in rows and
+samples in columns. We recommend raw counts as input, but normalised data
+can be provided, in which case set \code{logged_bulk = TRUE}.}
 
-\item{log}{Logical, whether to apply log2 +1 to count data in \code{test}. Set to
-\code{FALSE} if prenormalised bulk RNA-Seq data is provided.}
+\item{logged_bulk}{Logical, whether log2 transformed bulk RNA-Seq data is
+used as input in \code{test}.}
 
 \item{count_space}{Logical, whether deconvolution is performed in count
 space (as opposed to log2 space). Signature and test revert to count scale
@@ -133,6 +133,11 @@ compensation for spillover.
 Equal weighting of genes by setting \code{weight_method = "equal"} can help
 devolution of subclusters whose signature genes have low expression. It is
 enabled by default.
+
+If a normalised (i.e. logged) bulk matrix is provided instead of raw counts,
+then it is important that zero expression is true zero. For this reason we do
+not recommend use of VST (variance stabilised transformed counts) which has a
+variable offset.
 
 Multipass deconvolution can be activated by setting \code{npass} to 2 or higher.
 This is designed to remove genes which behave inconsistently due to noise in

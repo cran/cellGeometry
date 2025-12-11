@@ -1,6 +1,19 @@
 News
 =====
 
+# cellGeometry 0.5.7
+###### 11/12/2025
+* Change `log` argument in `deconvolute()` to `logged_bulk`. NB. this is a 
+change of logic.
+
+# cellGeometry 0.5.6
+###### 07/10/2025
+* Add `residuals.deconv()` to allow recalculation of full residuals matrix.
+
+# cellGeometry 0.5.5
+###### 10/09/2025
+* Fix bug in `mergeMarkers()` if cellMarkers object has no cell grouping vector.
+
 # cellGeometry 0.5.4
 ###### 09/09/2025
 * Fix CRAN checks

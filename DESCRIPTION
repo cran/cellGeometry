@@ -1,6 +1,6 @@
 Package: cellGeometry
 Title: Geometric Single Cell Deconvolution
-Version: 0.5.4
+Version: 0.5.7
 Authors@R: 
     c(person(given = "Myles", family = "Lewis",
     role = c("aut", "cre"),
@@ -9,6 +9,7 @@ Authors@R:
     person(given = "Rachel", family = "Lau",
     role = c("ctb"),
     comment = c(ORCID = "0000-0002-8330-8048")))
+URL: https://github.com/myles-lewis/cellGeometry
 Description: Deconvolution of bulk RNA-Sequencing data into proportions of cells based on a reference single-cell RNA-Sequencing dataset using high-dimensional geometric methodology. 
 License: GPL (>= 3)
 Encoding: UTF-8
@@ -22,9 +23,9 @@ Suggests: future.apply, ggsci, knitr, plotly, Rfast2, rmarkdown,
         seriation
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-09-10 12:31:17 UTC; myles
+Packaged: 2025-12-11 17:37:48 UTC; myles
 Author: Myles Lewis [aut, cre] (ORCID: <https://orcid.org/0000-0001-9365-5345>),
   Rachel Lau [ctb] (ORCID: <https://orcid.org/0000-0002-8330-8048>)
 Maintainer: Myles Lewis <myles.lewis@qmul.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-09-15 08:20:02 UTC
+Date/Publication: 2025-12-11 19:00:02 UTC
