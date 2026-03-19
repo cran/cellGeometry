@@ -139,9 +139,8 @@ knitr::include_graphics("brain_sig_amygdala.png")
 
 ## ----eval=FALSE---------------------------------------------------------------
 # fitm <- deconvolute(mkm, sim_sampled_merge,
-#                     arith_mean = TRUE, use_filter = FALSE, cores = 8)
-# # 19.2 secs (ARM, 1 core)
-# # 3.22 secs (ARM, 8 cores)
+#                     arith_mean = TRUE, use_filter = FALSE)
+# # 0.037 secs (ARM)
 
 ## ----eval=FALSE---------------------------------------------------------------
 # mset <- metric_set(sim_percent_merge, fitm$subclass$percent)

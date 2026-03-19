@@ -1676,9 +1676,8 @@ sim_percent_merge &lt;- sim_counts_merge / rowSums(sim_counts_merge) * 100</code
 <h1><span class="header-section-number">4</span> Deconvolution</h1>
 <p>We run the deconvolution on the merged pseudobulk count matrix.</p>
 <pre class="r"><code>fitm &lt;- deconvolute(mkm, sim_sampled_merge,
-                    arith_mean = TRUE, use_filter = FALSE, cores = 8)
-# 19.2 secs (ARM, 1 core)
-# 3.22 secs (ARM, 8 cores)</code></pre>
+                    arith_mean = TRUE, use_filter = FALSE)
+# 0.037 secs (ARM)</code></pre>
 <p>Finally we compare with ground truth and generate summary statistics
 and scatter plots comparing ground truth cell counts/percentages against
 the deconvolution predictions.</p>

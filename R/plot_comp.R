@@ -11,10 +11,21 @@
 #'   plot.
 #' @param mfrow Optional vector of length 2 for organising plot layout. See
 #'   `par()`. Only used when `overlay = FALSE`.
+#' @param subclass Either an index number or character value specifying which cell
+#'   subclass to plot.
+#' @param sample Either an index number or character value specifying which
+#'   sample to plot. Both `subclass` and `sample` cannot be specified together.
+#' @param add_points Logical whether to add points showing the final cell count
+#'   values.
+#' @param labs Either logical, whether to show labels for each line. Or a vector
+#'   of label names for each line.
 #' @param ... Optional graphical arguments passed to [plot()].
-#' @return No return value, plots the effect of varying compensation on minimum
-#'   subclass output for each cell subclass.
-#' @importFrom graphics text
+#' @return No return value. `plot_comp()` plots the effect of varying
+#'   compensation on the minimum subclass output for every cell subclass.
+#'   `plot_path()` plots the coefficient paths for either each bulk sample for the
+#'   subclass specified by `subclass`, or all subclasses for a single sample
+#'   specified by `sample`.
+#' @importFrom graphics text points
 #' @export
 
 plot_comp <- function(x, overlay = TRUE, mfrow = NULL, ...) {
@@ -25,7 +36,7 @@ plot_comp <- function(x, overlay = TRUE, mfrow = NULL, ...) {
   
   n <- length(x) -1
   px <- x$px
-  x <- x[1:n]
+  x <- lapply(x[1:n], colMins)
   new.args <- list(...)
   
   if (overlay) {
@@ -57,6 +68,73 @@ plot_comp <- function(x, overlay = TRUE, mfrow = NULL, ...) {
       abline(v = comp, col = "red", lty = 2)
       text(comp, ylim[2], format(comp, digits = 2, nsmall = 1),
            col = "red", adj = c(0.5, -0.5), xpd = NA)
+    }
+  }
+}
+
+#' @rdname plot_comp
+plot_path <- function(x, subclass = 1L, sample = NULL, add_points = FALSE,
+                      labs = TRUE, ...) {
+  if (!inherits(x, "deconv")) stop("not a 'deconv' class object")
+  ox <- x
+  x <- x$comp_check
+  if (is.null(x)) stop("missing comp_check analysis")
+  
+  px <- x$px
+  new.args <- list(...)
+  add_labs <- !isFALSE(labs) & !is.null(labs)
+  
+  if (is.null(sample)) {
+    # per subclass
+    n <- nrow(x[[1]])
+    scheme <- hue_pal(h = c(0, 270), c = 120)(n)
+    yr <- range(x[[subclass]])
+    args <- list(x = NA, las = 1, xlim = c(0, 1), ylim = yr, bty = "l",
+                 xlab = "Compensation", ylab = "coef",
+                 main = names(x[subclass]), font.main = 1)
+    if (length(new.args)) args[names(new.args)] <- new.args
+    do.call(plot, args)
+    abline(h = 0)
+    abline(v = ox$subclass$comp_amount[subclass], lty = 2)
+    for (i in seq_len(n)) {
+      lines(px, x[[subclass]][i, ], col = scheme[i])
+    }
+    if (add_labs) {
+      if (isTRUE(labs)) labs <- rownames(ox$subclass$output)[1:n]
+      text(rep(1.01, n), x[[subclass]][, length(px)], labs,
+           cex = 0.7, col = scheme, adj = c(0, 0.5), xpd = NA)
+    }
+    if (add_points) {
+      points(rep(ox$subclass$comp_amount[subclass], n),
+             ox$subclass$output[, subclass], pch = 20, col = scheme)
+    }
+  } else {
+    # per sample
+    if (!is.numeric(subclass) || subclass != 1L)
+      stop("cannot specify both subclass & sample")
+    n <- length(x) -1L
+    xx <- simplify2array(x[1:n])
+    rownames(xx) <- rownames(ox$subclass$output)
+    scheme <- hue_pal(h = c(0, 270), c = 120)(n)
+    yr <- range(xx[sample, , ])
+    main <- if (is.numeric(sample)) rownames(xx)[sample] else sample 
+    args <- list(x = NA, las = 1, xlim = c(0, 1), ylim = yr, bty = "l",
+                 xlab = "Compensation", ylab = "coef",
+                 main = main, font.main = 1)
+    if (length(new.args)) args[names(new.args)] <- new.args
+    do.call(plot, args)
+    abline(h = 0)
+    for (i in seq_len(n)) {
+      lines(px, xx[sample, , i], col = scheme[i])
+    }
+    if (add_labs) {
+      if (isTRUE(labs)) labs <- colnames(ox$subclass$output)[1:n]
+      text(rep(1.01, n), xx[sample, length(px), ], labs,
+           cex = 0.7, col = scheme, adj = c(0, 0.5), xpd = NA)
+    }
+    if (add_points) {
+      points(ox$subclass$comp_amount, ox$subclass$output[sample, ],
+             pch = 21, col = scheme, bg = "white")
     }
   }
 }

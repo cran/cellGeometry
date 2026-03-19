@@ -10,7 +10,10 @@ plot_tune(
   xvar = colnames(result)[1],
   fix = NULL,
   metric = attr(result, "metric"),
-  title = NULL
+  title = NULL,
+  show_legend = nlevels(result$subclass) < 25,
+  errorbars = TRUE,
+  show_points = TRUE
 )
 }
 \arguments{
@@ -25,9 +28,17 @@ axis.}
 
 \item{fix}{Optional list specifying parameters to be fixed at specific values.}
 
-\item{metric}{Specifies tuning metric: either "RMSE", "Rsq" or "pearson".}
+\item{metric}{Specifies tuning metric: either "RMSE", "Rsq", "pearson" or
+"resvar" (residual variance of bulk gene expression).}
 
 \item{title}{Character value for the plot title.}
+
+\item{show_legend}{Logical whether to show the legend when \code{group} is set to
+\code{"subclass"}. By default the legend is hidden if there are many subclasses.}
+
+\item{errorbars}{Logical whether to show error bars.}
+
+\item{show_points}{Logical whether to overlay points.}
 }
 \value{
 ggplot2 scatter plot.

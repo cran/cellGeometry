@@ -22,7 +22,8 @@ plot_set(
 samples in rows.}
 
 \item{pred}{Predicted (deconvoluted) matrix of cell amounts with rows and
-columns matching \code{obs}.}
+columns matching \code{obs}. Alternatively a 'deconv' class fitted model can be
+supplied and its \verb{$subclass$output} cell counts element will be used.}
 
 \item{mfrow}{Optional vector of length 2 for organising plot layout. See
 \code{par()}.}
@@ -47,8 +48,8 @@ plot space to introduce a gap between plots.}
 No return value. Produces scatter plots using base graphics.
 }
 \description{
-Produces scatter plots using base graphics to compare actual cell counts
-against deconvoluted cell counts from bulk (or pseudo-bulk) RNA-Seq. Mainly
-for use if ground truth is available, e.g. for simulated pseudo-bulk RNA-Seq
-data.
+Produces a set of scatter plots using base graphics to compare actual cell
+counts against deconvoluted cell counts from bulk (or pseudo-bulk) RNA-Seq
+for each cell subclass. Mainly for use if ground truth is available, e.g. for
+simulated pseudo-bulk RNA-Seq data.
 }

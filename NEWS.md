@@ -1,6 +1,51 @@
 News
 =====
 
+# cellGeometry 0.6.2
+###### 26/02/2026
+* Improved error checks in `deconvolute()` to help with issue #20.
+
+## New features
+
+* Add measurement of bias and variance to `tune_deconv()`.
+* Add `plot_tunevar()` to compare MSE, bias^2 and variance.
+* Add S3 method for `kappa()` to compute the condition number of the spillover 
+matrix.
+* Add `plot_path()` to show how the coefficient paths vary with compensation for 
+either a single bulk sample or a cell subclass.
+* Add `plot_pred()` as an alternative to `plot_set()` for viewing predicted vs 
+observed results from simulations in a single correlation plot.
+* Add `zero_fraction` argument to `generate_samples()`.
+
+# cellGeometry 0.6.1
+###### 13/01/2026
+* Fix subtle division by near 0 issue in `nest_output`
+
+## New features
+
+* Massive speed up of `deconvolute()`.
+* Add ridge parameter `lambda` to `deconvolute()` [experimental].
+* Add `resvar` metric to `tune_deconv()` to examine residual variance of bulk 
+gene expression.
+
+## Important change
+
+* `deconvolute()` no longer returns `se` and `hat` in the `subclass` list 
+element. Standard errors can be obtained with the new function `se()`.
+* `cores` argument has been removed from `deconvolute()`
+
+## Important bugfix
+
+* R 4.5.2 for macOS arm64 (Apple M* Macs) has switched to using a faster BLAS
+(vecLib?) by default, which causes errors with parallelisation in `mclapply()`.
+The problem is isolated to R 4.5.2 arm64 for macOS on M* Macs; or any version of
+R for macOS including intel, if vecLib BLAS is being used via a symlink. The
+solution is to use `cores = 1` with `deconvolute()` and `tune_deconv()` whenever
+vecLib BLAS is in use.
+* Removed use of `pbmcapply::pbmclapply()` as this caused problems with R 4.5.2 
+for macOS arm64 (Apple M* Macs) even with `cores=1`. This fixes indefinite 
+hanging in `tune_deconv()` associated with vecLib BLAS.
+
 # cellGeometry 0.5.7
 ###### 11/12/2025
 * Change `log` argument in `deconvolute()` to `logged_bulk`. NB. this is a 

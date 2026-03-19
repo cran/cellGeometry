@@ -15,6 +15,8 @@
 #'   are drawn from uniform distribution or dirichlet distribution.
 #' @param alpha Shape parameter for `gtools::rdirichlet()`. Automatically
 #'   expanded to be a vector whose length is the number of subclasses.
+#' @param zero_fraction Numeric from 0 to 1 specifying proportion of cell
+#'   subclasses to randomly set to zero in each sample.
 #' @returns An integer matrix with `n` rows, with columns for each cell
 #'   subclasses in `object`, representing cell counts for each cell subclass.
 #'   Designed to be passed to [simulate_bulk()].
@@ -26,7 +28,7 @@
 #' @export
 generate_samples <- function(object, n, equal_sample = TRUE,
                              method = c("unif", "dirichlet"),
-                             alpha = 1.5) {
+                             alpha = 1.5, zero_fraction = 0) {
   lim <- object$subclass_table
   nc <- length(lim)
   method <- match.arg(method)
@@ -42,6 +44,13 @@ generate_samples <- function(object, n, equal_sample = TRUE,
     dimnames(sim_counts) <- list(paste0("S", c(1:n)), names(lim))
   }
   mode(sim_counts) <- "integer"
+  if (zero_fraction > 0) {
+    zc <- round(zero_fraction * nc)
+    wr <- rep(seq_len(n), each = zc)
+    wc <- sample(nc, n * zc, replace = TRUE)
+    w <- matrix(c(wr, wc), ncol = 2)
+    sim_counts[w] <- 0L
+  }
   sim_counts
 }
 
@@ -90,7 +99,7 @@ simulate_bulk <- function(object, samples, subclass, times = 1,
     genemean_counts <- 2^object$genemeans -1
     if (ncol(genemean_counts) != ncol(samples)) stop("incompatible number of columns")
     sim_pseudo <- genemean_counts %*% t(samples)
-    mode(sim_pseudo) <- "integer"
+    if (all(sim_pseudo <= .Machine$integer.max)) mode(sim_pseudo) <- "integer"
     return(sim_pseudo)
   }
   
@@ -139,15 +148,16 @@ cat_timer <- function(start) {
 
 #' Scatter plots to compare deconvoluted subclasses
 #' 
-#' Produces scatter plots using base graphics to compare actual cell counts
-#' against deconvoluted cell counts from bulk (or pseudo-bulk) RNA-Seq. Mainly
-#' for use if ground truth is available, e.g. for simulated pseudo-bulk RNA-Seq
-#' data.
+#' Produces a set of scatter plots using base graphics to compare actual cell
+#' counts against deconvoluted cell counts from bulk (or pseudo-bulk) RNA-Seq
+#' for each cell subclass. Mainly for use if ground truth is available, e.g. for
+#' simulated pseudo-bulk RNA-Seq data.
 #' 
 #' @param obs Observed matrix of cell amounts with subclasses in columns and
 #'   samples in rows.
 #' @param pred Predicted (deconvoluted) matrix of cell amounts with rows and
-#'   columns matching `obs`.
+#'   columns matching `obs`. Alternatively a 'deconv' class fitted model can be
+#'   supplied and its `$subclass$output` cell counts element will be used.
 #' @param mfrow Optional vector of length 2 for organising plot layout. See
 #'   `par()`.
 #' @param show_zero Logical whether to force plot to include the origin.
@@ -169,6 +179,7 @@ plot_set <- function(obs, pred, mfrow = NULL,
                      cols = NULL,
                      colour = "blue",
                      title = "", cex.title = 1, ...) {
+  if (inherits(pred, "deconv")) pred <- pred$subclass$output
   if (!identical(dim(obs), dim(pred))) stop("incompatible dimensions")
   if (anyNA(pred)) {
     message("`pred` contains NA")
@@ -235,15 +246,14 @@ metric_set <- function(obs, pred) {
     pred[is.na(pred)] <- 0
   }
   
-  out <- t(vapply(colnames(obs), function(i) {
-    r1 <- Rsq(obs[, i], pred[, i])
-    r2 <- rmse(obs[, i], pred[, i])
-    c(r1, r2)
-  }, numeric(2)))
-  
+  d <- pred - obs
+  r1 <- colRsq(obs, pred)
+  r2 <- colRmse(d)
+  bias <- colMeans(d)
+  var <- predVar(d)
   cors <- diag(cor(obs, pred))^2 |> suppressWarnings()
-  out <- cbind(cors, out)
-  colnames(out) <- c("pearson.rsq", "Rsq", "RMSE")
+  out <- cbind(cors, r1, r2, bias, var)
+  colnames(out) <- c("pearson.rsq", "Rsq", "RMSE", "bias", "var")
   out
 }
 
@@ -255,4 +265,109 @@ Rsq <- function(obs, pred) {
   rss <- sum((pred - obs)^2)
   tss <- sum((obs - mean(obs))^2)
   1 - rss/tss
+}
+
+# column vectorised versions
+colRmse <- function(d) {
+  sqrt(colMeans(d^2))
+}
+
+colRsq <- function(obs, pred) {
+  rss <- colSums((pred - obs)^2)
+  tss <- rowSums((t(obs) - colMeans(obs))^2)
+  1 - rss/tss
+}
+
+predVar <- function(d) {
+  n <- nrow(d)
+  matrixStats::colVars(d) * (n-1)/n
+}
+
+#' Scatter plot to compare deconvoluted subclasses
+#' 
+#' Produces a single scatter plot using base graphics to compare actual cell
+#' counts against deconvoluted cell counts from bulk (or pseudo-bulk) RNA-Seq
+#' Cell subclasses are shown in different colours. Designed for use if ground
+#' truth is available, e.g. for simulated pseudo-bulk RNA-Seq data.
+#' 
+#' @param obs Observed matrix of cell amounts with subclasses in columns and
+#'   samples in rows.
+#' @param pred Predicted (deconvoluted) matrix of cell amounts with rows and
+#'   columns matching `obs`. Alternatively a 'deconv' class fitted model can be
+#'   supplied and its `$subclass$output` cell counts element will be used.
+#' @param mk Optional matching cellMarkers object. This is used for its
+#'   `cell_table` element to try to colour subclasses by group.
+#' @param scheme Vector of colours, one for each cell subclass.
+#' @param ellipse Either a single number for the number of ellipses to plot, in
+#'   which case ellipses are shown for cell subclasses with the lowest R^2; or a
+#'   character vector of cell subclasses to be outlined with ellipses. Requires
+#'   the ggforce package to be installed.
+#' @param labels Logical whether to add labels to ellipses.
+#' @returns A ggplot2 scatter plot. An overall R^2 (coefficient of
+#'   determination) comparing all observed and predicted results is shown.
+#' @importFrom ggplot2 geom_abline alpha margin
+#' @importFrom DescTools CCC
+#' @export
+plot_pred <- function(obs, pred, mk = NULL, scheme = NULL, ellipse = NULL,
+                      labels = TRUE) {
+  if (inherits(pred, "deconv")) pred <- pred$subclass$output
+  if (!identical(dim(obs), dim(pred))) stop("incompatible dimensions")
+  if (anyNA(pred)) {
+    message("`pred` contains NA")
+    pred[is.na(pred)] <- 0
+  }
+  subclasses <- colnames(obs)
+  if (is.null(scheme)) {
+    if (is.null(mk)) {
+      scheme <- hue_pal(h = c(0, 300))(ncol(obs))
+    } else {
+      if (!inherits(mk, "cellMarkers")) stop("mk is not a cellMarkers object")
+      scheme <- material_colours(mk)
+    }
+  }
+  dat <- data.frame(obs = as.vector(obs), pred = as.vector(pred),
+                    subclass = factor(rep(subclasses, each = nrow(obs))))
+  ccc <- CCC(dat$obs, dat$pred)$rho.c$est |> format(digits = 3)
+  rsq <- format(Rsq(obs, pred), digits = 3)
+  title <- bquote(CCC == .(ccc) * "," ~ R^2 == .(rsq))
+  
+  p <- ggplot(dat, aes(x = .data$obs, y = .data$pred, color = .data$subclass,
+                       fill = .data$subclass)) +
+    geom_point(size = 1, alpha = 0.8) +
+    scale_colour_manual(values = scheme) +
+    scale_fill_manual(values = scheme) +
+    geom_abline(slope = 1, intercept = 0) +
+    xlab("Observed") + ylab("Predicted") +
+    ggtitle(title) +
+    theme_classic() +
+    theme(axis.text = element_text(colour = "black"),
+          plot.title = element_text(size = 10),
+          legend.position = "none")
+  
+  if (!is.null(ellipse)) {
+    if (is.character(ellipse)) {
+      subdat <- dat[dat$subclass %in% ellipse, ]
+    } else {
+      mset <- metric_set(obs, pred)
+      o <- order(mset[, "Rsq"])[seq_len(ellipse)]
+      subdat <- dat[dat$subclass %in% colnames(obs)[o], ]
+    }
+    if (!requireNamespace("ggforce", quietly = TRUE))
+      stop("'ggforce' package is not installed", call. = FALSE)
+    p <- p +
+      ggforce::geom_mark_ellipse(data = subdat,
+                                 aes(x = .data$obs, y = .data$pred,
+                                     color = .data$subclass, fill = .data$subclass,
+                                     label = if (labels) .data$subclass else NULL),
+                                 label.fontface = "plain",
+                                 label.margin = margin(1, 1, 1, 1, "mm"),
+                                 label.fontsize = 10,
+                                 label.fill = alpha("white", 0.6),
+                                 label.buffer = unit(5, "mm"),
+                                 con.cap = 0,
+                                 con.type = "straight",
+                                 con.border = "none",
+                                 expand = 0, linewidth = unit(0.3, "pt"))
+  }
+  p
 }

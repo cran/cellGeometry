@@ -39,7 +39,8 @@ which output from the subclass results element resulting from a call to
 sample cell numbers in \code{samples}, using \code{\link[=metric_set]{metric_set()}}.}
 
 \item{metric}{Specifies tuning metric to choose optimal tune: either
-"RMSE", "Rsq" or "pearson".}
+"RMSE", "Rsq", "pearson" or "resvar" (residual variance of bulk gene
+expression).}
 
 \item{method}{Either "top" or "overall". Determines how best parameter values
 are chosen. With "top" the single top configuration is chosen. With
@@ -57,7 +58,9 @@ settings.}
 }
 \value{
 Dataframe with class \code{'tune_deconv'} whose columns include: the
-parameters being tuned via \code{grid}, cell subclass and R squared.
+parameters being tuned via \code{grid}, cell subclass and R squared, RMSE,
+pearson r^2, residual gene expression variance, prediction bias and
+variance, and kappa (condition number).
 }
 \description{
 Performs an exhaustive grid search over a tuning grid of cell marker and
