@@ -116,16 +116,25 @@ hat_fit <- function(fit) {
 #' 
 #' @param object a 'deconv' class object
 #' @param ... retained for class compatibility
+#' @param type Specifies type of residuals, either raw or weighted. Ignored if
+#'   `test` is specified.
 #' @param test bulk gene expression matrix assumed to be in raw counts
 #' @returns Matrix of residuals.
 #' @export
 residuals.deconv <- function(object, ...,
+                             type = c("raw", "weight"),
                              test = NULL) {
-  if (is.null(test)) return(object$subclass$residuals)
+  type <- match.arg(type)
+  if (is.null(test)) {
+    r <- object$subclass$residuals
+    w <- object$subclass$weights
+    if (type == "weight" && !is.null(w)) r <- r * w
+    return(r)
+  }
   # recalculate residuals
-  arith_mean <- eval(object$call$arith_mean) %||% FALSE
-  use_filter <- eval(object$call$use_filter) %||% TRUE
-  count_space <- eval(object$call$count_space) %||% TRUE
+  arith_mean <- object$opt$arith_mean %||% FALSE
+  use_filter <- object$opt$use_filter %||% TRUE
+  count_space <- object$opt$count_space %||% TRUE
   cellmat <- get_cellmat(object$mk, arith_mean, use_filter, sub = TRUE)
   
   nm <- object$call$test
@@ -210,4 +219,46 @@ se <- function(model, type = c("var.e", "OLS", "OLS2", "HC0", "HC2", "HC3")) {
 #' @export
 kappa.deconv <- function(z, ...) {
   kappa(z$subclass$spillover, ...)
+}
+
+
+#' Confidence Intervals for Deconvolution Models
+#' 
+#' Computes confidence intervals for fitted deconvolution models.
+#' 
+#' The default "var.e" method for calculating standard error (SE) is
+#' recommended. Other SE methods are most reliable with bulk data with low
+#' noise, and when fitted compensation values are close to 1 and ridge parameter
+#' lambda is close to 0. As compensation values deviate away from 1 or as lambda
+#' increases, CI calculated based on OLS/HC0-3 SE inflate and are progressively
+#' less reliable.
+#' 
+#' @param object a fitted 'deconv' class model object.
+#' @param parm for compatibility with S3 method. Not used.
+#' @param level the confidence level required.
+#' @param ... additional arguments for S3 compatibility.
+#' @param type specifies standard error method, see [se()].
+#' @returns List containing 2 matrices with lower and upper confidence
+#'   intervals.
+#' @seealso [se()]
+#' @importFrom stats qt setNames
+#' @export
+confint.deconv <- function(object, parm, level = 0.95, ..., type = "var.e") {
+  type <- match.arg(type, c("var.e", "OLS", "OLS2", "HC0", "HC2", "HC3"))
+  se0 <- se(object, type)
+  output <- object$subclass$output
+  attr(output, "min") <- NULL
+  if (type == "var.e") output <- t(output)
+  a <- 1 - (1 - level)/2
+  format_perc <- paste(format(c(1 - a, a), trim = TRUE, digits = 3,
+                              scientific = FALSE), "%")
+  rdf <- nrow(object$subclass$X) - ncol(object$subclass$X)
+  fac <- qt(a, rdf)
+  lci <- output - se0 * fac
+  uci <- output + se0 * fac
+  if (type == "var.e") {
+    lci <- t(lci)
+    uci <- t(uci)
+  }
+  setNames(list(lci, uci), format_perc)
 }

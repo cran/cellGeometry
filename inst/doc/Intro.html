@@ -2064,8 +2064,21 @@ deconvolute cell types that are related e.g. subsets of neurons, subsets
 of B/T-cells etc. This means that the single-cell reference gene
 signature has a strong tendency to collinearity.</p>
 </div>
-<div id="residual-gene-expression" class="section level2" number="8.2">
-<h2><span class="header-section-number">8.2</span> Residual gene
+<div id="confidence-intervals" class="section level2" number="8.2">
+<h2><span class="header-section-number">8.2</span> Confidence
+intervals</h2>
+<p>Based on the standard error calculation, confidence intervals
+(default level 95%) can be calculated for all samples using
+<code>confint()</code>.</p>
+<pre class="r"><code># default method using var.e (see paper for details)
+ci1 &lt;- confint(fit)
+str(ci1)
+
+# ordinary least squares
+ci2 &lt;- confint(fit, type = &quot;OLS&quot;)</code></pre>
+</div>
+<div id="residual-gene-expression" class="section level2" number="8.3">
+<h2><span class="header-section-number">8.3</span> Residual gene
 expression</h2>
 <p>Residual gene expression values can be accessed using
 <code>residuals()</code>. Residuals are calculated based on the gene
@@ -2082,8 +2095,12 @@ samples on the <em>y</em> axis with bulk gene expression along the
 <em>x</em> axis. Residuals can either be plotted with or without the
 effect of equal gene weighting, or as Studentized residuals. A ggplot2
 version is available via <code>ggplot_residuals()</code>.</p>
-<pre class="r"><code>plot_residuals(fit, sim_sampled)
-plot_residuals(fit, sim_sampled, type = &quot;weight&quot;)
+<pre class="r"><code># fitted values for bulk on x axis
+plot_residuals(fit)
+
+# actual bulk gene expression - good for spotting outliers with massive expression
+plot_residuals(fit, sim_sampled)
+plot_residuals(fit, sim_sampled, type = &quot;raw&quot;)
 plot_residuals(fit, sim_sampled, type = &quot;student&quot;)</code></pre>
 <p>Functions that can help users decide if genes are outliers include
 standardized or Studentized residuals which can be computed using
@@ -2094,8 +2111,8 @@ Cook’s distance can also be calculated using
 rs2 &lt;- rstudent(fit)
 cooksd &lt;- cooks.distance(fit)</code></pre>
 </div>
-<div id="multipass-outlying-gene-removal" class="section level2" number="8.3">
-<h2><span class="header-section-number">8.3</span> Multipass outlying
+<div id="multipass-outlying-gene-removal" class="section level2" number="8.4">
+<h2><span class="header-section-number">8.4</span> Multipass outlying
 gene removal</h2>
 <p>Genes which are outliers based on extreme residual gene expression
 are flagged automatically by the <code>deconvolute()</code> function and
@@ -2112,6 +2129,33 @@ outliers are set too low, the process can go on forever.</p>
 <pre class="r"><code>sim_noise &lt;- shift_noise(sim_sampled)
 fit2 &lt;-  deconvolute(mk, sim_noise, npass = 4,
                      use_filter = FALSE, arith_mean = TRUE)</code></pre>
+</div>
+<div id="variable-compensation" class="section level2" number="8.5">
+<h2><span class="header-section-number">8.5</span> Variable
+compensation</h2>
+<p>cellGeometry autotunes compensation for each cell subclass
+independently as part of the mechanism to prevent negative cell counts
+in the deconvolution results. The package includes functions to
+visualise the effects of varying compensation. To enable these, the
+argument <code>comp_check</code> must be set to <code>TRUE</code> when
+calling <code>deconvolute()</code>. With simple simulations, the
+compensation values are all very close to 1. However, this system is
+more deeply invoked and necessary with real-world bulk samples.</p>
+<pre class="r"><code>fit2 &lt;-  deconvolute(mk, sim_noise,
+                     use_filter = FALSE, arith_mean = TRUE, comp_check = TRUE)
+
+# show minimum deconvolution values across all samples to see where comp cut-offs occur
+plot_comp(fit2)
+
+# show coefficient paths for a single subclass (across all samples)
+plot_path(fit2)
+
+# show coef paths as cell percentages
+plot_path(fit2, type = &quot;percent&quot;)
+
+# show coef paths for the first bulk sample (across all subclasses)
+plot_path(fit2, sample = 1)
+plot_path(fit2, sample = 1, type = &quot;percent&quot;)</code></pre>
 </div>
 </div>
 <div id="citation" class="section level1" number="9">

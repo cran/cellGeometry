@@ -18,6 +18,8 @@ deconvolute(
   arith_mean = FALSE,
   convert_bulk = FALSE,
   lambda = NULL,
+  cv_lambda = FALSE,
+  nfolds = 10,
   check_comp = FALSE,
   npass = 1,
   outlier_method = c("var.e", "cooks", "rstudent"),
@@ -68,7 +70,13 @@ using reference data or "qqmap" using quantile mapping of the bulk to
 scRNA-Seq datasets, or "none" (or \code{FALSE}) for no conversion.}
 
 \item{lambda}{single numeric value of ridge parameter lambda. Only applied to
-subclass deconvolution, not applied to cell group analysis. Experimental.}
+subclass deconvolution, not applied to cell group analysis. If
+\code{cv_lambda = TRUE} then a sequence of lambda values can be supplied.}
+
+\item{cv_lambda}{logical, whether to tune lambda using cross-validation
+(experimental). If \code{lambda} is not supplied, a default sequence is used.}
+
+\item{nfolds}{Number of folds for cross-validation of lambda.}
 
 \item{check_comp}{logical, whether to analyse compensation values across
 subclasses. See \code{\link[=plot_comp]{plot_comp()}}.}
@@ -111,8 +119,10 @@ values
 \item \code{weights}, vector of weights
 \item \code{resvar}, \eqn{s^2} the estimate of the gene expression variance
 for each sample
-\item \code{removed}, vector of outlying genes removed during successive
-passes
+\item \code{removed}, optional vector of outlying genes removed during
+successive passes
+\item \code{cv}, optional list included when \code{cv_lambda = TRUE}, containing
+lambda CV results
 }}
 \item{group}{similar list object to \code{subclass}, but with results for the
 cell group analysis.}
@@ -123,6 +133,7 @@ as a proportion of cell group outputs.}
 subclass adjusted so that the percentages across subclasses are nested
 within cell group percentages. The total percentage still adds to 100\%.}
 \item{comp_amount}{original argument \code{comp_amount}}
+\item{opt}{list of original arguments}
 \item{comp_check}{optional list element returned when \code{check_comp = TRUE}}
 }
 \description{
@@ -167,12 +178,23 @@ normally distributed either, which probably explains the need for a very high
 cut-off. In practice the choice of settings seems to be dataset dependent.
 
 The ridge parameter lambda, which adds L2 regularisation to the compensation
-(moment) matrix is provided only for experimental purposes. Any small benefit
-seems to be outweighed by varying other parameters especially \code{nsubclass}.
+(moment) matrix, is provided for experimental purposes. Lambda can either be
+set manually, or cross-validation of lambda is performed by splitting
+signature genes into folds and performing CV based on minimising sum of
+squared residual gene expression error. The CV curve can be plotted using
+\code{\link[=plot_cv]{plot_cv()}}.
+
+In simple simulations, altering lambda or using CV of lambda provides a small
+benefit, but it is almost always outweighed by varying other parameters
+especially increasing \code{nsubclass}. Where CV of lambda appears to be more
+useful is in simulations where different types of noise is added. Here, CV of
+lambda provides benefit against added noise, especially in large datasets
+with many subclasses, or if collinearity (similarity) is high between cell
+subclasses. It has not been tested extensively on real world bulk data.
 }
 \seealso{
-\code{\link[=cellMarkers]{cellMarkers()}} \code{\link[=updateMarkers]{updateMarkers()}} \code{\link[=se]{se()}} \code{\link[=rstudent.deconv]{rstudent.deconv()}}
-\code{\link[=cooks.distance.deconv]{cooks.distance.deconv()}}
+\code{\link[=cellMarkers]{cellMarkers()}} \code{\link[=updateMarkers]{updateMarkers()}} \code{\link[=se]{se()}} \code{\link[=residuals.deconv]{residuals.deconv()}}
+\code{\link[=rstudent.deconv]{rstudent.deconv()}} \code{\link[=cooks.distance.deconv]{cooks.distance.deconv()}} \code{\link[=kappa.deconv]{kappa.deconv()}} \code{\link[=plot_cv]{plot_cv()}}
 }
 \author{
 Myles Lewis

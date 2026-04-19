@@ -267,6 +267,15 @@ Rsq <- function(obs, pred) {
   1 - rss/tss
 }
 
+# Lin's CCC
+#' @importFrom stats cov var
+ccc <- function(x, y) {
+  x <- as.vector(x)
+  y <- as.vector(y)
+  n <- length(x)
+  2* cov(x, y) / (var(x) + var(y) + ((mean(x) - mean(y))^2 * n/(n-1)))
+}
+
 # column vectorised versions
 colRmse <- function(d) {
   sqrt(colMeans(d^2))
@@ -303,13 +312,13 @@ predVar <- function(d) {
 #'   character vector of cell subclasses to be outlined with ellipses. Requires
 #'   the ggforce package to be installed.
 #' @param labels Logical whether to add labels to ellipses.
+#' @param main Title to add to plot.
 #' @returns A ggplot2 scatter plot. An overall R^2 (coefficient of
 #'   determination) comparing all observed and predicted results is shown.
 #' @importFrom ggplot2 geom_abline alpha margin
-#' @importFrom DescTools CCC
 #' @export
 plot_pred <- function(obs, pred, mk = NULL, scheme = NULL, ellipse = NULL,
-                      labels = TRUE) {
+                      labels = TRUE, main = "") {
   if (inherits(pred, "deconv")) pred <- pred$subclass$output
   if (!identical(dim(obs), dim(pred))) stop("incompatible dimensions")
   if (anyNA(pred)) {
@@ -327,9 +336,10 @@ plot_pred <- function(obs, pred, mk = NULL, scheme = NULL, ellipse = NULL,
   }
   dat <- data.frame(obs = as.vector(obs), pred = as.vector(pred),
                     subclass = factor(rep(subclasses, each = nrow(obs))))
-  ccc <- CCC(dat$obs, dat$pred)$rho.c$est |> format(digits = 3)
+  ccc <- ccc(dat$obs, dat$pred) |> format(digits = 3)
   rsq <- format(Rsq(obs, pred), digits = 3)
-  title <- bquote(CCC == .(ccc) * "," ~ R^2 == .(rsq))
+  if (nchar(main) > 0) main <- paste0(main, " ")
+  title <- bquote(.(main) * CCC == .(ccc) * "," ~ R^2 == .(rsq))
   
   p <- ggplot(dat, aes(x = .data$obs, y = .data$pred, color = .data$subclass,
                        fill = .data$subclass)) +
@@ -337,11 +347,10 @@ plot_pred <- function(obs, pred, mk = NULL, scheme = NULL, ellipse = NULL,
     scale_colour_manual(values = scheme) +
     scale_fill_manual(values = scheme) +
     geom_abline(slope = 1, intercept = 0) +
-    xlab("Observed") + ylab("Predicted") +
-    ggtitle(title) +
+    labs(xlab = "Observed", ylab = "Predicted", subtitle = title) +
     theme_classic() +
     theme(axis.text = element_text(colour = "black"),
-          plot.title = element_text(size = 10),
+          axis.ticks = element_line(colour = "black"),
           legend.position = "none")
   
   if (!is.null(ellipse)) {

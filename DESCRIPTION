@@ -1,6 +1,6 @@
 Package: cellGeometry
 Title: Geometric Single Cell Deconvolution
-Version: 0.6.2
+Version: 0.6.3
 Authors@R: 
     c(person(given = "Myles", family = "Lewis",
     role = c("aut", "cre"),
@@ -14,18 +14,18 @@ Description: Deconvolution of bulk RNA-Sequencing data into proportions of cells
 License: GPL (>= 3)
 Encoding: UTF-8
 biocViews:
-Imports: circlize, ComplexHeatmap, DelayedArray, DescTools, dplyr,
-        ensembldb, ggplot2, ggrepel, grid, gtools, matrixStats,
-        mcprogress, parallel, rlang, scales
+Imports: circlize, ComplexHeatmap, DelayedArray, dplyr, ensembldb,
+        ggplot2, ggrepel, grid, gtools, matrixStats, mcprogress,
+        parallel, rlang, scales
 RoxygenNote: 7.3.3
 Depends: R (>= 4.1.0)
 Suggests: future.apply, ggforce, ggsci, knitr, plotly, Rfast2,
         rmarkdown, seriation, tidyr
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-03-19 12:10:48 UTC; myles
+Packaged: 2026-04-19 22:31:16 UTC; myles
 Author: Myles Lewis [aut, cre] (ORCID: <https://orcid.org/0000-0001-9365-5345>),
   Rachel Lau [ctb] (ORCID: <https://orcid.org/0000-0002-8330-8048>)
 Maintainer: Myles Lewis <myles.lewis@qmul.ac.uk>
 Repository: CRAN
-Date/Publication: 2026-03-19 13:10:02 UTC
+Date/Publication: 2026-04-19 22:50:02 UTC

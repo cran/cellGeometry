@@ -613,6 +613,20 @@ users actively want to try to deconvolute cell types that are related e.g.
 subsets of neurons, subsets of B/T-cells etc. This means that the single-cell
 reference gene signature has a strong tendency to collinearity.
 
+## Confidence intervals
+
+Based on the standard error calculation, confidence intervals (default level
+95%) can be calculated for all samples using `confint()`.
+
+```{r eval=FALSE}
+# default method using var.e (see paper for details)
+ci1 <- confint(fit)
+str(ci1)
+
+# ordinary least squares
+ci2 <- confint(fit, type = "OLS")
+```
+
 ## Residual gene expression
 
 Residual gene expression values can be accessed using `residuals()`. Residuals
@@ -634,8 +648,12 @@ of equal gene weighting, or as Studentized residuals. A ggplot2 version is
 available via `ggplot_residuals()`.
 
 ```{r eval=FALSE}
+# fitted values for bulk on x axis
+plot_residuals(fit)
+
+# actual bulk gene expression - good for spotting outliers with massive expression
 plot_residuals(fit, sim_sampled)
-plot_residuals(fit, sim_sampled, type = "weight")
+plot_residuals(fit, sim_sampled, type = "raw")
 plot_residuals(fit, sim_sampled, type = "student")
 ```
 
@@ -667,6 +685,34 @@ set too low, the process can go on forever.
 sim_noise <- shift_noise(sim_sampled)
 fit2 <-  deconvolute(mk, sim_noise, npass = 4,
                      use_filter = FALSE, arith_mean = TRUE)
+```
+
+## Variable compensation
+
+cellGeometry autotunes compensation for each cell subclass independently as part
+of the mechanism to prevent negative cell counts in the deconvolution results.
+The package includes functions to visualise the effects of varying compensation.
+To enable these, the argument `comp_check` must be set to `TRUE` when calling
+`deconvolute()`. With simple simulations, the compensation values are all very
+close to 1. However, this system is more deeply invoked and necessary with
+real-world bulk samples.
+
+```{r eval=FALSE}
+fit2 <-  deconvolute(mk, sim_noise,
+                     use_filter = FALSE, arith_mean = TRUE, comp_check = TRUE)
+
+# show minimum deconvolution values across all samples to see where comp cut-offs occur
+plot_comp(fit2)
+
+# show coefficient paths for a single subclass (across all samples)
+plot_path(fit2)
+
+# show coef paths as cell percentages
+plot_path(fit2, type = "percent")
+
+# show coef paths for the first bulk sample (across all subclasses)
+plot_path(fit2, sample = 1)
+plot_path(fit2, sample = 1, type = "percent")
 ```
 
 # Citation

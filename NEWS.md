@@ -1,6 +1,17 @@
 News
 =====
 
+###### 14/04/2026
+* Add S3 method for `confint()` with `deconv` objects to allow calculation of
+confidence intervals.
+* Add `max_similarity()` for calculating maximum similarity between cell types.
+* Add CV of lambda in `deconvolute()` [experimental].
+* Use `$opt` element to store call arguments in `deconvolute()`.
+* Refine vignette.
+
+###### 19/03/2026
+* Improved `plot_comp()` and `plot_path()` with option to show cell percentages.
+
 # cellGeometry 0.6.2
 ###### 26/02/2026
 * Improved error checks in `deconvolute()` to help with issue #20.

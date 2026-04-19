@@ -197,14 +197,26 @@ knitr::include_graphics("typist_tune.png")
 # se2 <- se(fit, type = "OLS")
 
 ## ----eval=FALSE---------------------------------------------------------------
+# # default method using var.e (see paper for details)
+# ci1 <- confint(fit)
+# str(ci1)
+# 
+# # ordinary least squares
+# ci2 <- confint(fit, type = "OLS")
+
+## ----eval=FALSE---------------------------------------------------------------
 # r <- residuals(fit)
 # 
 # # full table including all genes
 # r1 <- residuals(fit, test = sim_sampled)
 
 ## ----eval=FALSE---------------------------------------------------------------
+# # fitted values for bulk on x axis
+# plot_residuals(fit)
+# 
+# # actual bulk gene expression - good for spotting outliers with massive expression
 # plot_residuals(fit, sim_sampled)
-# plot_residuals(fit, sim_sampled, type = "weight")
+# plot_residuals(fit, sim_sampled, type = "raw")
 # plot_residuals(fit, sim_sampled, type = "student")
 
 ## ----eval=FALSE---------------------------------------------------------------
@@ -216,4 +228,21 @@ knitr::include_graphics("typist_tune.png")
 # sim_noise <- shift_noise(sim_sampled)
 # fit2 <-  deconvolute(mk, sim_noise, npass = 4,
 #                      use_filter = FALSE, arith_mean = TRUE)
+
+## ----eval=FALSE---------------------------------------------------------------
+# fit2 <-  deconvolute(mk, sim_noise,
+#                      use_filter = FALSE, arith_mean = TRUE, comp_check = TRUE)
+# 
+# # show minimum deconvolution values across all samples to see where comp cut-offs occur
+# plot_comp(fit2)
+# 
+# # show coefficient paths for a single subclass (across all samples)
+# plot_path(fit2)
+# 
+# # show coef paths as cell percentages
+# plot_path(fit2, type = "percent")
+# 
+# # show coef paths for the first bulk sample (across all subclasses)
+# plot_path(fit2, sample = 1)
+# plot_path(fit2, sample = 1, type = "percent")
 

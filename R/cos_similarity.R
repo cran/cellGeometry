@@ -14,7 +14,7 @@
 cos_similarity <- function(x, use_filter = NULL) {
   if (inherits(x, "deconv")) {
     x <- x$mk
-    if (is.null(use_filter)) use_filter <- x$call$use_filter
+    if (is.null(use_filter)) use_filter <- x$opt$use_filter
   }
   if (inherits(x, "cellMarkers")) {
     if (is.null(use_filter)) use_filter <- TRUE
@@ -57,4 +57,22 @@ rank_angle <- function(x, angle_cutoff = 45) {
   c1 <- factor(ind[ok, 1], levels = seq_len(nrow(x)), labels = rownames(x))
   c2 <- factor(ind[ok, 2], levels = seq_len(ncol(x)), labels = colnames(x))
   data.frame(c1, c2, angle = ang[o2])
+}
+
+
+#' Maximum similarity between cell types
+#' 
+#' Computes maximum similarity between cell types based on the gene signature
+#' matrix.
+#' 
+#' @param x Either a matrix or a 'cellMarkers' class or 'deconv' class object.
+#' @param ... Optional arguments passed to [cos_similarity()].
+#' @returns A vector of similarity results.
+#' @seealso [diagnose()] which outputs a more comprehensive pairwise comparison
+#'   of similarity between cell subclasses.
+#' @export
+max_similarity <- function(x, ...) {
+  cs <- cos_similarity(x, ...)
+  diag(cs) <- 0
+  rowMaxs(cs)
 }
